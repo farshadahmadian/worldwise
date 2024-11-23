@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 
 import AppLayout from "./pages/AppLayout/AppLayout";
@@ -7,8 +8,55 @@ import Pricing from "./pages/Pricing/Pricing";
 import PageNotFound from "./pages/PageNotFound/PageNotFound";
 import Login from "./pages/Login/Login";
 import CityList from "./components/CityList/CityList";
+import CountryList from "./components/CountryList/CountryList";
+
+export type CityType = {
+  cityName: string;
+  country: string;
+  emoji: string;
+  date: string;
+  notes: string;
+  position: {
+    lat: number;
+    lng: number;
+  };
+  id: number;
+};
 
 function App() {
+  const [cities, setCities] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  useEffect(() => {
+    setIsLoading(true);
+    const controller = new AbortController();
+    const getCities = async function (): Promise<CityType[]> {
+      try {
+        const response = await fetch("http://localhost:8000/cities", {
+          signal: controller.signal,
+        });
+        const data = await response.json();
+        setCities(data);
+        // if (!data.length) throw new Error("Data not available");
+        setIsLoading(false);
+        return data;
+      } catch (error) {
+        if (error instanceof Error && error.name === "AbortError") {
+          // setIsLoading(false);
+          return [];
+        } else if (error instanceof Error && error.name !== "AbortError")
+          console.error(error.message);
+        else console.error(error);
+        setIsLoading(false);
+        return Promise.resolve([]);
+      }
+    };
+    getCities();
+
+    return () => {
+      controller.abort();
+    };
+  }, []);
+
   return (
     <BrowserRouter>
       <Routes>
@@ -19,9 +67,18 @@ function App() {
         <Route path="pricing" element={<Pricing />} />
         <Route path="/login" element={<Login />} />
         <Route path="/app" element={<AppLayout />}>
-          <Route index element={<CityList />} />
-          <Route path="cities" element={<CityList />} />
-          <Route path="countries" element={<h2>List of Countries</h2>} />
+          <Route
+            index
+            element={<CityList cities={cities} isLoading={isLoading} />}
+          />
+          <Route
+            path="cities"
+            element={<CityList cities={cities} isLoading={isLoading} />}
+          />
+          <Route
+            path="countries"
+            element={<CountryList cities={cities} isLoading={isLoading} />}
+          />
           <Route path="form" element={<h2>form</h2>} />
         </Route>
         <Route path="*" element={<PageNotFound />} />
