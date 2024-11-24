@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 import { CityType } from "../../App";
 
 import styles from "./CityItem.module.css";
@@ -14,13 +16,21 @@ const formatDate = (date: string) =>
   }).format(new Date(date));
 
 function CityItem({ city }: CityItemProps) {
-  const { emoji, cityName, date } = city;
+  const {
+    emoji,
+    cityName,
+    date,
+    id,
+    position: { lat, lng },
+  } = city;
   return (
-    <li className={styles.cityItem}>
-      <span className={styles.emoji}>{emoji}</span>
-      <h3 className={styles.name}>{cityName}</h3>
-      <time className={styles.date}>({formatDate(date)})</time>
-      <button className={styles.deleteBtn}>&times;</button>
+    <li>
+      <Link className={styles.cityItem} to={`${id}?lat=${lat}&lng=${lng}`}>
+        <span className={styles.emoji}>{emoji}</span>
+        <h3 className={styles.name}>{cityName}</h3>
+        <time className={styles.date}>({formatDate(date)})</time>
+        <button className={styles.deleteBtn}>&times;</button>
+      </Link>
     </li>
   );
 }
