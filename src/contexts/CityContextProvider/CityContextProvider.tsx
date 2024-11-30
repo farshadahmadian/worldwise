@@ -1,4 +1,11 @@
-import { createContext, ReactNode, useEffect, useState } from "react";
+import {
+  createContext,
+  ReactNode,
+  useCallback,
+  useEffect,
+  useState,
+} from "react";
+import { fetchData } from "../../utils/fetchData";
 
 type CityContextProviderPropsType = {
   children: ReactNode;
@@ -21,49 +28,65 @@ type defaultCityContextType = {
   cities: CityType[];
   // setCities: React.Dispatch<React.SetStateAction<CityType[]>>;
   isLoading: boolean;
-  // setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
+  setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
+  currentCity: CityType | null;
+  setCurrentCity: React.Dispatch<React.SetStateAction<CityType | null>>;
+  // getCurrentCity: (
+  //   controller: AbortController,
+  //   url: string,
+  //   setState:
+  //     | React.Dispatch<React.SetStateAction<CityType | null>>
+  //     | React.Dispatch<React.SetStateAction<CityType[]>>,
+  //   setIsLoading: React.Dispatch<React.SetStateAction<boolean>>,
+  //   rejectValue: Promise<[]> | Promise<null>
+  // ) => Promise<[]> | Promise<null>;
+
+  getCurrentCity: <T>(
+    controller: AbortController,
+    url: string,
+    setState: React.Dispatch<React.SetStateAction<T>>,
+    setIsLoading: React.Dispatch<React.SetStateAction<boolean>>,
+    rejectValue: Promise<[]> | Promise<null>
+  ) => Promise<T | [] | null>;
 };
 
 const defaultCityContext: defaultCityContextType = {
   cities: [],
   // setCities: () => {},
   isLoading: true,
-  // setIsLoading: () => {},
+  setIsLoading: () => {},
+  currentCity: null,
+  setCurrentCity: () => {},
+  getCurrentCity: () => Promise.resolve(null),
 };
 
 const CityContext = createContext(defaultCityContext);
+
+export const BASE_URL = "http://localhost:8000";
 
 export function CityContextProvider({
   children,
 }: CityContextProviderPropsType) {
   const [cities, setCities] = useState<CityType[]>([]);
+  const [currentCity, setCurrentCity] = useState<CityType | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  const getCurrentCity = useCallback(fetchData, [
+    setCurrentCity,
+    currentCity,
+    setIsLoading,
+  ]);
 
   useEffect(() => {
     setIsLoading(true);
     const controller = new AbortController();
-    const getCities = async function (): Promise<CityType[]> {
-      try {
-        const response = await fetch("http://localhost:8000/cities", {
-          signal: controller.signal,
-        });
-        const data = await response.json();
-        setCities(data);
-        // if (!data.length) throw new Error("Data not available");
-        setIsLoading(false);
-        return data;
-      } catch (error) {
-        if (error instanceof Error && error.name === "AbortError") {
-          // setIsLoading(false);
-          return [];
-        } else if (error instanceof Error && error.name !== "AbortError")
-          console.error(error.message);
-        else console.error(error);
-        setIsLoading(false);
-        return Promise.resolve([]);
-      }
-    };
-    getCities();
+    fetchData(
+      controller,
+      `${BASE_URL}/cities`,
+      setCities,
+      setIsLoading,
+      Promise.resolve([])
+    );
 
     return () => {
       controller.abort();
@@ -71,7 +94,16 @@ export function CityContextProvider({
   }, []);
 
   return (
-    <CityContext.Provider value={{ cities, isLoading }}>
+    <CityContext.Provider
+      value={{
+        cities,
+        isLoading,
+        currentCity,
+        getCurrentCity,
+        setCurrentCity,
+        setIsLoading,
+      }}
+    >
       {children}
     </CityContext.Provider>
   );

@@ -1,5 +1,11 @@
-import { useParams, useSearchParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import styles from "./City.module.css";
+import { useEffect, useState } from "react";
+import { BASE_URL } from "../../contexts/CityContextProvider/CityContextProvider";
+import useCityContext from "../../contexts/CityContextProvider/useCityContext";
+import { fetchData } from "../../utils/fetchData";
+import Spinner from "../Spinner/Spinner";
+import BackButton from "../BackButton/BackButton";
 
 const formatDate = (date: string) =>
   new Intl.DateTimeFormat("en", {
@@ -11,33 +17,33 @@ const formatDate = (date: string) =>
 
 function City() {
   const { id } = useParams();
-  const [searchParams, setSearchParams] = useSearchParams();
+  // const [searchParams, setSearchParams] = useSearchParams();
+  const { currentCity, getCurrentCity, setCurrentCity } = useCityContext();
+  const [isLoading, setIsLoading] = useState(true);
 
-  const lat = searchParams.get("lat");
-  const lng = searchParams.get("lng");
-  return (
-    <div>
-      <h1>City {id}</h1>
-      <p>lat: {lat}</p>
-      <p>lng: {lng}</p>
-      <button
-        onClick={() => {
-          setSearchParams({ lat: "50", lng: "100" });
-        }}
-      >
-        change position
-      </button>
-    </div>
-  );
-  /*  const currentCity = {
-    cityName: "Lisbon",
-    emoji: "🇵🇹",
-    date: "2027-10-31T15:59:59.138Z",
-    notes: "My favorite city so far!",
-  };
+  // const lat = searchParams.get("lat");
+  // const lng = searchParams.get("lng");
+
+  useEffect(() => {
+    if (!id) return;
+    const controller = new AbortController();
+    fetchData(
+      controller,
+      `${BASE_URL}/cities/${id}`,
+      setCurrentCity,
+      setIsLoading,
+      Promise.resolve(null)
+    );
+
+    return () => {
+      controller.abort();
+    };
+  }, [id, setCurrentCity, currentCity, getCurrentCity]);
+  if (!currentCity) return null;
+
+  if (isLoading) return <Spinner />;
 
   const { cityName, emoji, date, notes } = currentCity;
-
   return (
     <div className={styles.city}>
       <div className={styles.row}>
@@ -69,9 +75,9 @@ function City() {
           Check out {cityName} on Wikipedia &rarr;
         </a>
       </div>
-
+      <BackButton />
     </div>
-  ); */
+  );
 }
 
 export default City;

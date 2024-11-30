@@ -2,9 +2,9 @@ import React, { MouseEvent } from "react";
 
 import styles from "./Button.module.css";
 
-type ButtonPropsType = {
+export type ButtonPropsType = {
   children: React.ReactNode;
-  type: string;
+  type: "primary" | "back";
   onClick: (event: MouseEvent) => void;
 };
 
