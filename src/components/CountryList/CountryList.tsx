@@ -1,20 +1,18 @@
-import { CityType } from "../../App";
+import useCityContext from "../../contexts/CityContextProvider/useCityContext";
 import CountryItem from "../CountryItem/CountryItem";
 import Message from "../Message/Message";
 import Spinner from "../Spinner/Spinner";
 import styles from "./CountryList.module.css";
 
-type CountryListProps = {
-  cities: CityType[];
-  isLoading: boolean;
-};
-
-function CountryList({ cities, isLoading }: CountryListProps) {
+function CountryList() {
   type accuType = {
     country: string;
     emoji: string;
     id: number;
   };
+
+  const { cities, isLoading } = useCityContext();
+
   const countries = cities.reduce((accu: accuType[], city) => {
     /* let isUniqueCountry = true;
     for (const c of accu) {
