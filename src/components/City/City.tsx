@@ -18,7 +18,7 @@ const formatDate = (date: string) =>
 function City() {
   const { id } = useParams();
   // const [searchParams, setSearchParams] = useSearchParams();
-  const { currentCity, getCurrentCity, setCurrentCity } = useCityContext();
+  const { currentCity, setCurrentCity } = useCityContext();
   const [isLoading, setIsLoading] = useState(true);
 
   // const lat = searchParams.get("lat");
@@ -38,7 +38,8 @@ function City() {
     return () => {
       controller.abort();
     };
-  }, [id, setCurrentCity, currentCity, getCurrentCity]);
+  }, [id, setCurrentCity]);
+
   if (!currentCity) return null;
 
   if (isLoading) return <Spinner />;
