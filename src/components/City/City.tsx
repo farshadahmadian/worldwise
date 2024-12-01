@@ -40,9 +40,11 @@ function City() {
     };
   }, [id, setCurrentCity]);
 
-  if (!currentCity) return null;
-
   if (isLoading) return <Spinner />;
+
+  if (!currentCity || !Object.keys(currentCity).length) {
+    return <p>Not found</p>;
+  }
 
   const { cityName, emoji, date, notes } = currentCity;
   return (

@@ -38,6 +38,7 @@ export const fetchData = async function <T>(
   rejectValue: Promise<[]> | Promise<null>
 ): Promise<T | [] | null> {
   try {
+    setIsLoading(true);
     const response = await fetch(url, {
       signal: controller.signal,
     });

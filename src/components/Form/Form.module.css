@@ -42,3 +42,13 @@
   font-family: inherit;
   font-size: 1.2rem;
 }
+
+.cityInputContainer {
+  display: flex;
+  align-items: center;
+}
+
+.cityInputContainer img {
+  position: absolute;
+  right: 10px;
+}
