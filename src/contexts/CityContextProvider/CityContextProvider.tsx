@@ -48,6 +48,9 @@ type defaultCityContextType = {
     setIsLoading: React.Dispatch<React.SetStateAction<boolean>>,
     rejectValue: Promise<[]> | Promise<null>
   ) => Promise<T | [] | null>;
+
+  createCity: (city: CityType) => Promise<CityType | null>;
+  addCity: (city: CityType) => void;
 };
 
 const defaultCityContext: defaultCityContextType = {
@@ -58,6 +61,8 @@ const defaultCityContext: defaultCityContextType = {
   currentCity: null,
   setCurrentCity: () => {},
   getCurrentCity: () => Promise.resolve(null),
+  createCity: () => Promise.resolve(null),
+  addCity: () => {},
 };
 
 const CityContext = createContext(defaultCityContext);
@@ -93,6 +98,33 @@ export function CityContextProvider({
     };
   }, []);
 
+  async function createCity(city: CityType): Promise<CityType | null> {
+    setIsLoading(true);
+    const request = {
+      method: "POST",
+      body: JSON.stringify(city),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    };
+    try {
+      const response = await fetch(`${BASE_URL}/cities`, request);
+      const data = await response.json();
+      setIsLoading(false);
+
+      if (Object.keys(data).length) return data;
+      else return null;
+    } catch (error) {
+      setIsLoading(false);
+      console.error(error);
+      return Promise.resolve(null);
+    }
+  }
+
+  function addCity(city: CityType) {
+    setCities(prevCities => [...prevCities, city]);
+  }
+
   return (
     <CityContext.Provider
       value={{
@@ -102,6 +134,8 @@ export function CityContextProvider({
         getCurrentCity,
         setCurrentCity,
         setIsLoading,
+        createCity,
+        addCity,
       }}
     >
       {children}

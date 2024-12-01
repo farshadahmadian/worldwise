@@ -1,14 +1,20 @@
 // "https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=0&longitude=0"
 
-import { useEffect, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
+import DatePicker from "react-datepicker";
 
-import styles from "./Form.module.css";
 import Button from "../Button/Button";
 import BackButton from "../BackButton/BackButton";
 import useQueries from "../../hooks/useQueries";
 import { fetchData } from "../../utils/fetchData";
 import Message from "../Message/Message";
 import Spinner from "../Spinner/Spinner";
+
+import "react-datepicker/dist/react-datepicker.css";
+import styles from "./Form.module.css";
+import { CityType } from "../../contexts/CityContextProvider/CityContextProvider";
+import useCityContext from "../../contexts/CityContextProvider/useCityContext";
+import { useNavigate } from "react-router-dom";
 
 /* function convertToEmoji(countryCode: string) {
   if (!countryCode) return "";
@@ -21,7 +27,7 @@ import Spinner from "../Spinner/Spinner";
 
 type MapCity = {
   city: string;
-  country: string;
+  countryName: string;
   countryCode: string;
 };
 
@@ -31,11 +37,13 @@ function Form() {
   const [countryName, setCountryName] = useState("");
   // const [emoji, setEmoji] = useState("");
   const [countryCode, setCountryCode] = useState("");
-  const [date, setDate] = useState(new Date());
+  const [date, setDate] = useState<Date | null>(new Date());
   const [notes, setNotes] = useState("");
   const [isLoadingGeocoding, setIsLoadingGeocoding] = useState(true);
   const [error, setError] = useState("");
   const { lat, lng } = useQueries();
+  const { createCity, addCity, isLoading } = useCityContext();
+  const navigate = useNavigate();
 
   const BASE_URL = "https://api.bigdatacloud.net/data/reverse-geocode-client";
 
@@ -54,7 +62,6 @@ function Form() {
       setIsLoadingGeocoding,
       Promise.resolve(null)
     );
-
     return () => controller.abort();
   }, [lat, lng]);
 
@@ -63,17 +70,47 @@ function Form() {
     setError("");
     if (!city?.countryCode) setError("Please select a city");
     setCityName(city?.city || "");
-    setCountryName(city?.country || "");
+    setCountryName(city?.countryName || "");
     // setEmoji(convertToEmoji(city?.countryCode || ""));
     setCountryCode(city?.countryCode || "");
   }, [city]);
+
+  async function handleSubmit(event: FormEvent) {
+    // isLoadingGeocoding is the local state and isLoading is the global state (Context API). because the createCity() function in the context API updates the isLoading state, we do not need to use the local state (isLoadingGeocoding). Instead we can use isLoading global state and update the UI based on its value (if true, add the "loading" class to the form)
+    // setIsLoadingGeocoding(true);
+    event.preventDefault();
+    if (!cityName || !date) return;
+    const newCity: CityType = {
+      cityName,
+      country: countryName,
+      date: date.toString(),
+      notes: notes,
+      position: {
+        lat: parseFloat(lat || "0"),
+        lng: parseFloat(lng || "0"),
+      },
+      emoji: countryCode,
+      id: Math.floor(Math.random() * 100000) + 1,
+    };
+    const data = await createCity(newCity);
+    setNotes("");
+    setCityName("");
+    // setIsLoadingGeocoding(false);
+    if (data) {
+      addCity(data);
+      navigate("/app");
+    }
+  }
 
   if (isLoadingGeocoding) return <Spinner />;
 
   if (error) return <Message message={error} />;
 
   return (
-    <form className={styles.form}>
+    <form
+      className={`${styles.form} ${isLoading ? styles.loading : ""}`}
+      onSubmit={handleSubmit}
+    >
       <div className={styles.row}>
         <label htmlFor="cityName">City name</label>
         <div className={styles.cityInputContainer}>
@@ -87,23 +124,15 @@ function Form() {
           />
           {/* <span className={styles.flag}>{emoji}</span> */}
           {countryCode && (
-            <img
-              width="24px"
-              src={`https://flagsapi.com/${countryCode}/flat/24.png`}
-            />
+            <img src={`https://flagsapi.com/${countryCode}/flat/24.png`} />
           )}
         </div>
       </div>
 
       <div className={styles.row}>
         <label htmlFor="date">When did you go to {cityName}?</label>
-        <input
-          id="date"
-          onChange={e => setDate(new Date(e.target.value))}
-          value={date.toDateString()}
-        />
       </div>
-
+      <DatePicker id="date" selected={date} onChange={date => setDate(date)} />
       <div className={styles.row}>
         <label htmlFor="notes">Notes about your trip to {cityName}</label>
         <textarea
@@ -112,7 +141,6 @@ function Form() {
           value={notes}
         />
       </div>
-
       <div className={styles.buttons}>
         <Button type="primary" onClick={() => {}}>
           Add

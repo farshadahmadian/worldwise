@@ -33,7 +33,8 @@ function CityItem({ city }: CityItemProps) {
         }`}
         to={`${id}?lat=${lat}&lng=${lng}`}
       >
-        <span className={styles.emoji}>{emoji}</span>
+        {/* <span className={styles.emoji}>{emoji}</span> */}
+        <img src={`https://flagsapi.com/${emoji}/flat/24.png`} alt="flag" />
         <h3 className={styles.name}>{cityName}</h3>
         <time className={styles.date}>({formatDate(date)})</time>
         <button className={styles.deleteBtn}>&times;</button>
