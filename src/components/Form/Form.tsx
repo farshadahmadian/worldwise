@@ -90,7 +90,7 @@ function Form() {
         lng: parseFloat(lng || "0"),
       },
       emoji: countryCode,
-      id: Math.floor(Math.random() * 100000) + 1,
+      id: Math.random().toString(16).slice(2) + Date.now().toString(16),
     };
     const data = await createCity(newCity);
     setNotes("");

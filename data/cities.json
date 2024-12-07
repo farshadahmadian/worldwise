@@ -1,28 +1,3 @@
 {
-  "cities": [
-    {
-      "cityName": "Bouloire",
-      "country": "France",
-      "date": "Sun Dec 01 2024 17:09:07 GMT+0100 (Central European Standard Time)",
-      "notes": "",
-      "position": {
-        "lat": 47.96360248701899,
-        "lng": 0.5688148174403241
-      },
-      "emoji": "FR",
-      "id": 3518
-    },
-    {
-      "cityName": "Xanten",
-      "country": "Germany",
-      "date": "Sun Dec 01 2024 17:13:47 GMT+0100 (Central European Standard Time)",
-      "notes": "",
-      "position": {
-        "lat": 51.677476734301464,
-        "lng": 6.416015625000001
-      },
-      "emoji": "DE",
-      "id": 3248
-    }
-  ]
+  "cities": []
 }

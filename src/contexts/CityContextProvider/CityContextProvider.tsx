@@ -21,7 +21,7 @@ export type CityType = {
     lat: number;
     lng: number;
   };
-  id: number;
+  id: string;
 };
 
 type defaultCityContextType = {
@@ -51,6 +51,7 @@ type defaultCityContextType = {
 
   createCity: (city: CityType) => Promise<CityType | null>;
   addCity: (city: CityType) => void;
+  deleteCity: (id: string) => void;
 };
 
 const defaultCityContext: defaultCityContextType = {
@@ -63,6 +64,7 @@ const defaultCityContext: defaultCityContextType = {
   getCurrentCity: () => Promise.resolve(null),
   createCity: () => Promise.resolve(null),
   addCity: () => {},
+  deleteCity: () => {},
 };
 
 const CityContext = createContext(defaultCityContext);
@@ -117,7 +119,25 @@ export function CityContextProvider({
     } catch (error) {
       setIsLoading(false);
       console.error(error);
+      alert("Something went wrong");
       return Promise.resolve(null);
+    }
+  }
+
+  async function deleteCity(id: string) {
+    setIsLoading(true);
+    try {
+      const response = await fetch(`${BASE_URL}/cities/${id}`, {
+        method: "DELETE",
+      });
+      if (response.status == 200) {
+        await response.json();
+        setCities(prevCities => prevCities.filter(city => city.id !== id));
+      } else alert("Something went wrong");
+      setIsLoading(false);
+    } catch (error) {
+      setIsLoading(false);
+      console.error(error);
     }
   }
 
@@ -136,6 +156,7 @@ export function CityContextProvider({
         setIsLoading,
         createCity,
         addCity,
+        deleteCity,
       }}
     >
       {children}
