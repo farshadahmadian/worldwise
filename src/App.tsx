@@ -11,33 +11,44 @@ import CountryList from "./components/CountryList/CountryList";
 import City from "./components/City/City";
 import Form from "./components/Form/Form";
 import { CityContextProvider } from "./contexts/CityContextProvider/CityContextProvider";
+import { AuthContextProvider } from "./contexts/FakeAuthContext/AuthContextProvider";
+import ProtectedRoute from "./pages/ProtectedRoute/ProtectedRoute";
 
 function App() {
   return (
-    <CityContextProvider>
-      <BrowserRouter>
-        <Routes>
-          {/* element means a react element which is a component instant */}
-          <Route index element={<Homepage />} />
-          <Route />
-          <Route path="product" element={<Product />} />
-          <Route path="pricing" element={<Pricing />} />
-          <Route path="login" element={<Login />} />
-          <Route path="app" element={<AppLayout />}>
+    <AuthContextProvider>
+      <CityContextProvider>
+        <BrowserRouter>
+          <Routes>
+            {/* element means a react element which is a component instant */}
+            <Route index element={<Homepage />} />
+            <Route />
+            <Route path="product" element={<Product />} />
+            <Route path="pricing" element={<Pricing />} />
+            <Route path="login" element={<Login />} />
             <Route
-              index
-              // element={<CityList cities={cities} isLoading={isLoading} />}
-              element={<Navigate replace to="cities" />}
-            />
-            <Route path="cities" element={<CityList />} />
-            <Route path="cities/:id" element={<City />} />
-            <Route path="countries" element={<CountryList />} />
-            <Route path="form" element={<Form />} />
-          </Route>
-          <Route path="*" element={<PageNotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </CityContextProvider>
+              path="app"
+              element={
+                <ProtectedRoute>
+                  <AppLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route
+                index
+                // element={<CityList cities={cities} isLoading={isLoading} />}
+                element={<Navigate replace to="cities" />}
+              />
+              <Route path="cities" element={<CityList />} />
+              <Route path="cities/:id" element={<City />} />
+              <Route path="countries" element={<CountryList />} />
+              <Route path="form" element={<Form />} />
+            </Route>
+            <Route path="*" element={<PageNotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </CityContextProvider>
+    </AuthContextProvider>
   );
 }
 
