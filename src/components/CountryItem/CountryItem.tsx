@@ -4,7 +4,7 @@ type CountryItemPropsType = {
   country: {
     emoji: string;
     country: string;
-    id: number;
+    id: string;
   };
 };
 

@@ -27,7 +27,9 @@ const DefaultIcon = L.icon({
 L.Marker.prototype.options.icon = DefaultIcon;
 
 function Map() {
-  const { cities } = useCityContext();
+  const {
+    state: { cities },
+  } = useCityContext();
   const [mapPosition, setMapPosition] = useState<[number, number]>([49, 2]);
   const { lat, lng } = useQueries();
   const {

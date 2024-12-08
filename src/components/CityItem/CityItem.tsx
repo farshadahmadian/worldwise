@@ -17,7 +17,10 @@ const formatDate = (date: string) =>
   }).format(new Date(date));
 
 function CityItem({ city }: CityItemProps) {
-  const { currentCity, deleteCity } = useCityContext();
+  const {
+    state: { currentCity },
+    deleteCity,
+  } = useCityContext();
 
   const {
     emoji,

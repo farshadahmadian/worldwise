@@ -5,7 +5,9 @@ import Spinner from "../Spinner/Spinner";
 import styles from "./CityList.module.css";
 
 function CityList() {
-  const { cities, isLoading } = useCityContext();
+  const {
+    state: { cities, isLoading },
+  } = useCityContext();
   return (
     <>
       {isLoading && <Spinner />}

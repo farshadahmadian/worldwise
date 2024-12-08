@@ -42,7 +42,11 @@ function Form() {
   const [isLoadingGeocoding, setIsLoadingGeocoding] = useState(true);
   const [error, setError] = useState("");
   const { lat, lng } = useQueries();
-  const { createCity, addCity, isLoading } = useCityContext();
+  const {
+    createCity,
+    addCity,
+    state: { isLoading },
+  } = useCityContext();
   const navigate = useNavigate();
 
   const BASE_URL = "https://api.bigdatacloud.net/data/reverse-geocode-client";

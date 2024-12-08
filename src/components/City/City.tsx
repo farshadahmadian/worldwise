@@ -1,9 +1,7 @@
 import { useParams } from "react-router-dom";
 import styles from "./City.module.css";
-import { useEffect, useState } from "react";
-import { BASE_URL } from "../../contexts/CityContextProvider/CityContextProvider";
+import { useEffect } from "react";
 import useCityContext from "../../contexts/CityContextProvider/useCityContext";
-import { fetchData } from "../../utils/fetchData";
 import Spinner from "../Spinner/Spinner";
 import BackButton from "../BackButton/BackButton";
 
@@ -18,8 +16,10 @@ const formatDate = (date: string) =>
 function City() {
   const { id } = useParams();
   // const [searchParams, setSearchParams] = useSearchParams();
-  const { currentCity, setCurrentCity } = useCityContext();
-  const [isLoading, setIsLoading] = useState(true);
+  const {
+    state: { currentCity, isLoading },
+    updateCurrentCity,
+  } = useCityContext();
 
   // const lat = searchParams.get("lat");
   // const lng = searchParams.get("lng");
@@ -27,18 +27,12 @@ function City() {
   useEffect(() => {
     if (!id) return;
     const controller = new AbortController();
-    fetchData(
-      controller,
-      `${BASE_URL}/cities/${id}`,
-      setCurrentCity,
-      setIsLoading,
-      Promise.resolve(null)
-    );
+    updateCurrentCity(id, controller);
 
     return () => {
       controller.abort();
     };
-  }, [id, setCurrentCity]);
+  }, [id, updateCurrentCity]);
 
   if (isLoading) return <Spinner />;
 

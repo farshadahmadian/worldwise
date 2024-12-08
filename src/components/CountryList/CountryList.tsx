@@ -8,10 +8,12 @@ function CountryList() {
   type accuType = {
     country: string;
     emoji: string;
-    id: number;
+    id: string;
   };
 
-  const { cities, isLoading } = useCityContext();
+  const {
+    state: { cities, isLoading },
+  } = useCityContext();
 
   const countries = cities.reduce((accu: accuType[], city) => {
     /* let isUniqueCountry = true;

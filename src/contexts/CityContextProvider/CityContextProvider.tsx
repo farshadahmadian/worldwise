@@ -1,11 +1,11 @@
 import {
   createContext,
   ReactNode,
+  Reducer,
   useCallback,
   useEffect,
-  useState,
+  useReducer,
 } from "react";
-import { fetchData } from "../../utils/fetchData";
 
 type CityContextProviderPropsType = {
   children: ReactNode;
@@ -25,12 +25,12 @@ export type CityType = {
 };
 
 type defaultCityContextType = {
-  cities: CityType[];
-  // setCities: React.Dispatch<React.SetStateAction<CityType[]>>;
-  isLoading: boolean;
-  setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
-  currentCity: CityType | null;
-  setCurrentCity: React.Dispatch<React.SetStateAction<CityType | null>>;
+  state: IState;
+  updateCurrentCity: (
+    id: string,
+    controller: AbortController
+  ) => Promise<CityType | null>;
+  // setCurrentCity: React.Dispatch<React.SetStateAction<CityType | null>>;
   // getCurrentCity: (
   //   controller: AbortController,
   //   url: string,
@@ -41,27 +41,28 @@ type defaultCityContextType = {
   //   rejectValue: Promise<[]> | Promise<null>
   // ) => Promise<[]> | Promise<null>;
 
-  getCurrentCity: <T>(
-    controller: AbortController,
-    url: string,
-    setState: React.Dispatch<React.SetStateAction<T>>,
-    setIsLoading: React.Dispatch<React.SetStateAction<boolean>>,
-    rejectValue: Promise<[]> | Promise<null>
-  ) => Promise<T | [] | null>;
+  // getCurrentCity: <T>(
+  //   controller: AbortController,
+  //   url: string,
+  //   setState: React.Dispatch<React.SetStateAction<T>>,
+  //   setIsLoading: React.Dispatch<React.SetStateAction<boolean>>,
+  //   rejectValue: Promise<[]> | Promise<null>
+  // ) => Promise<T | [] | null>;
 
   createCity: (city: CityType) => Promise<CityType | null>;
   addCity: (city: CityType) => void;
   deleteCity: (id: string) => void;
 };
 
-const defaultCityContext: defaultCityContextType = {
+const initialState: IState = {
   cities: [],
-  // setCities: () => {},
-  isLoading: true,
-  setIsLoading: () => {},
   currentCity: null,
-  setCurrentCity: () => {},
-  getCurrentCity: () => Promise.resolve(null),
+  isLoading: true,
+};
+
+const defaultCityContext: defaultCityContextType = {
+  state: initialState,
+  updateCurrentCity: () => Promise.resolve(null),
   createCity: () => Promise.resolve(null),
   addCity: () => {},
   deleteCity: () => {},
@@ -69,31 +70,136 @@ const defaultCityContext: defaultCityContextType = {
 
 const CityContext = createContext(defaultCityContext);
 
+interface IState {
+  cities: CityType[];
+  currentCity: CityType | null;
+  isLoading: boolean;
+}
+
+type ActionType =
+  | {
+      type: "getCities";
+      payload: { cities: CityType[]; isLoading: boolean };
+    }
+  | { type: "startLoading" }
+  | { type: "stopLoading" }
+  | { type: "deleteCity"; payload: string }
+  | { type: "addCity"; payload: CityType }
+  | { type: "updateCurrentCity"; payload: CityType };
+
+function reducer(previousState: IState, action: ActionType): IState {
+  const { type } = action;
+  switch (type) {
+    case "getCities":
+      return {
+        ...previousState,
+        cities: action.payload.cities || [],
+        isLoading: action.payload.isLoading || false,
+      };
+    case "startLoading":
+      return { ...previousState, isLoading: true };
+    case "stopLoading":
+      return { ...previousState, isLoading: false };
+    case "deleteCity":
+      return {
+        ...previousState,
+        cities: previousState.cities.filter(city => city.id !== action.payload),
+        currentCity: null,
+      };
+    case "addCity":
+      return {
+        ...previousState,
+        cities: [...previousState.cities, action.payload],
+        currentCity: action.payload,
+      };
+    case "updateCurrentCity":
+      return { ...previousState, currentCity: action.payload };
+    default: {
+      const exhaustiveCheck: never = type;
+      throw new Error(`Unhandled action type: ${exhaustiveCheck}`);
+    }
+  }
+}
+
 export const BASE_URL = "http://localhost:8000";
 
 export function CityContextProvider({
   children,
 }: CityContextProviderPropsType) {
-  const [cities, setCities] = useState<CityType[]>([]);
-  const [currentCity, setCurrentCity] = useState<CityType | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [state, dispatch] = useReducer<Reducer<IState, ActionType>>(
+    reducer,
+    initialState
+  );
 
-  const getCurrentCity = useCallback(fetchData, [
-    setCurrentCity,
-    currentCity,
-    setIsLoading,
-  ]);
+  // const [cities, setCities] = useState<CityType[]>([]);
+  // const [currentCity, setCurrentCity] = useState<CityType | null>(null);
+  // const [isLoading, setIsLoading] = useState(true);
+
+  // const getCurrentCity = useCallback(fetchData, [
+  //   setCurrentCity,
+  //   currentCity,
+  //   setIsLoading,
+  // ]);
+
+  const updateCurrentCity = useCallback(
+    async function (
+      id: string,
+      controller: AbortController
+    ): Promise<CityType | null> {
+      if (id === state.currentCity?.id) return state.currentCity;
+      dispatch({ type: "startLoading" });
+      try {
+        const response = await fetch(`${BASE_URL}/cities/${id}`, {
+          signal: controller.signal,
+        });
+        // const data = (await response.json()) as T;
+        const data = await response.json();
+        dispatch({ type: "updateCurrentCity", payload: data });
+        dispatch({ type: "stopLoading" });
+        return data;
+      } catch (error) {
+        if (error instanceof Error && error.name === "AbortError") {
+          return null;
+        } else if (error instanceof Error && error.name !== "AbortError") {
+          console.error(error.message);
+        } else {
+          console.error(error);
+        }
+        dispatch({ type: "stopLoading" });
+        return null;
+      }
+    },
+    [state.currentCity]
+  );
 
   useEffect(() => {
-    setIsLoading(true);
+    dispatch({ type: "startLoading" });
     const controller = new AbortController();
-    fetchData(
-      controller,
-      `${BASE_URL}/cities`,
-      setCities,
-      setIsLoading,
-      Promise.resolve([])
-    );
+
+    const getCities = async function (): Promise<CityType[]> {
+      try {
+        const response = await fetch(`${BASE_URL}/cities`, {
+          signal: controller.signal,
+        });
+        const data = await response.json();
+        dispatch({
+          type: "getCities",
+          payload: { cities: data, isLoading: false },
+        });
+        return data;
+      } catch (error) {
+        if (error instanceof Error && error.name === "AbortError") {
+          return [];
+        } else if (error instanceof Error && error.name !== "AbortError") {
+          console.error(error.message);
+        } else {
+          console.error(error);
+        }
+        dispatch({ type: "stopLoading" });
+        return [];
+      }
+    };
+    getCities();
 
     return () => {
       controller.abort();
@@ -101,7 +207,7 @@ export function CityContextProvider({
   }, []);
 
   async function createCity(city: CityType): Promise<CityType | null> {
-    setIsLoading(true);
+    dispatch({ type: "startLoading" });
     const request = {
       method: "POST",
       body: JSON.stringify(city),
@@ -112,12 +218,12 @@ export function CityContextProvider({
     try {
       const response = await fetch(`${BASE_URL}/cities`, request);
       const data = await response.json();
-      setIsLoading(false);
+      dispatch({ type: "stopLoading" });
 
       if (Object.keys(data).length) return data;
       else return null;
     } catch (error) {
-      setIsLoading(false);
+      dispatch({ type: "stopLoading" });
       console.error(error);
       alert("Something went wrong");
       return Promise.resolve(null);
@@ -125,35 +231,31 @@ export function CityContextProvider({
   }
 
   async function deleteCity(id: string) {
-    setIsLoading(true);
+    dispatch({ type: "startLoading" });
     try {
       const response = await fetch(`${BASE_URL}/cities/${id}`, {
         method: "DELETE",
       });
       if (response.status == 200) {
         await response.json();
-        setCities(prevCities => prevCities.filter(city => city.id !== id));
+        dispatch({ type: "deleteCity", payload: id });
       } else alert("Something went wrong");
-      setIsLoading(false);
+      dispatch({ type: "stopLoading" });
     } catch (error) {
-      setIsLoading(false);
+      dispatch({ type: "stopLoading" });
       console.error(error);
     }
   }
 
   function addCity(city: CityType) {
-    setCities(prevCities => [...prevCities, city]);
+    dispatch({ type: "addCity", payload: city });
   }
 
   return (
     <CityContext.Provider
       value={{
-        cities,
-        isLoading,
-        currentCity,
-        getCurrentCity,
-        setCurrentCity,
-        setIsLoading,
+        state,
+        updateCurrentCity,
         createCity,
         addCity,
         deleteCity,
