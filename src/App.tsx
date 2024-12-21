@@ -1,28 +1,37 @@
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { lazy, Suspense } from "react";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 
-import AppLayout from "./pages/AppLayout/AppLayout";
-import Homepage from "./pages/Homepage/Homepage";
-import Product from "./pages/Product/Product";
-import Pricing from "./pages/Pricing/Pricing";
-import PageNotFound from "./pages/PageNotFound/PageNotFound";
-import Login from "./pages/Login/Login";
+import { CityContextProvider } from "./contexts/CityContextProvider/CityContextProvider";
+import { AuthContextProvider } from "./contexts/FakeAuthContext/AuthContextProvider";
+
 import CityList from "./components/CityList/CityList";
 import CountryList from "./components/CountryList/CountryList";
 import City from "./components/City/City";
 import Form from "./components/Form/Form";
-import { CityContextProvider } from "./contexts/CityContextProvider/CityContextProvider";
-import { AuthContextProvider } from "./contexts/FakeAuthContext/AuthContextProvider";
+import SpinnerFullPage from "./components/SpinnerFullPage/SpinnerFullPage";
+
 import ProtectedRoute from "./pages/ProtectedRoute/ProtectedRoute";
 
+const AppLayout = lazy(() => import("./pages/AppLayout/AppLayout"));
+const Homepage = lazy(() => import("./pages/Homepage/Homepage"));
+const Product = lazy(() => import("./pages/Product/Product"));
+const Pricing = lazy(() => import("./pages/Pricing/Pricing"));
+const PageNotFound = lazy(() => import("./pages/PageNotFound/PageNotFound"));
+const Login = lazy(() => import("./pages/Login/Login"));
+
 function App() {
+  // to use useLocation() inside App, "BrowserRouter" must wrap "App" in main.tsx.
+  const location = useLocation();
+
   return (
     <AuthContextProvider>
       <CityContextProvider>
-        <BrowserRouter>
+        {/* for better performance, instead of one global Suspense with the key attribute which forces Suspense to be unmounted and mounted again, use a Suspense component for each route separately */}
+        <Suspense key={location.pathname} fallback={<SpinnerFullPage />}>
           <Routes>
             {/* element means a react element which is a component instant */}
             <Route index element={<Homepage />} />
-            <Route />
+            {/* <Route /> */}
             <Route path="product" element={<Product />} />
             <Route path="pricing" element={<Pricing />} />
             <Route path="login" element={<Login />} />
@@ -46,7 +55,7 @@ function App() {
             </Route>
             <Route path="*" element={<PageNotFound />} />
           </Routes>
-        </BrowserRouter>
+        </Suspense>
       </CityContextProvider>
     </AuthContextProvider>
   );
